@@ -1,0 +1,53 @@
+import psycopg2
+import config
+from datetime import timedelta, datetime
+
+def connectToDatabase():
+    try:
+        dbConnection = psycopg2.connect(
+            user="user@dublinbikes",
+            password="Password1",
+            host="dublinbikes.postgres.database.azure.com",
+            port="5432",
+            database="dublinbikes")
+    except (Exception, psycopg2.Error) as dbError:
+        print("Error while connecting to database", dbError)
+    return dbConnection
+
+def beginTransaction(databaseConnection):
+    transaction = databaseConnection.cursor()
+    return transaction
+
+def endTransaction(databaseConnection):
+    databaseConnection.commit()
+    databaseConnection.close()
+
+StationID = '34'
+StartDate = datetime(2019, 1, 1)
+StartDateStr = StartDate.strftime("%Y-%m-%d")
+EndDate = datetime(2019, 1, 2)
+EndDateStr = EndDate.strftime("%Y-%m-%d")
+
+def CountData2019(databaseTransaction):
+    counttablequery  = 'SELECT COUNT(*) FROM public."DublinBike2019" WHERE "StationID" = ' + StationID
+    databaseTransaction.execute(counttablequery)
+    result = databaseTransaction.fetchall()[0]
+    print(result)
+
+def ShowData2019(databaseTransaction):
+    counttablequery  ='''SELECT * FROM public."DublinBike2019"
+                        WHERE "historic_time" >= ' '''+StartDateStr+ '''
+                        'AND "historic_time" <' '''+ EndDateStr + '''
+                        'AND "StationID" = ''' +StationID
+    databaseTransaction.execute(counttablequery)
+    result = databaseTransaction.fetchall()
+    print(result)
+
+def main():
+    databaseConnection = connectToDatabase()
+    databaseTransaction = beginTransaction(databaseConnection)
+    CountData2019(databaseTransaction)
+    ShowData2019(databaseTransaction)
+    endTransaction(databaseConnection)
+
+main()
